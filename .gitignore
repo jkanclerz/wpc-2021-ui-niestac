@@ -1,0 +1,3 @@
+node_modules/
+src/aws_config.js
+dist/*.js

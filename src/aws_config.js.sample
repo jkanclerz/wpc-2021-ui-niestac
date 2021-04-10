@@ -1,0 +1,5 @@
+export const awsConfig = {
+    UserPoolId: '{yout user pool id}',
+    ClientId: '{your app client id}',
+    BucketName: '{your bucket name}',
+}
