@@ -1,6 +1,20 @@
 <html>
     <head>
         <title>My Application :p</title>
+
+        <style>
+            .progressBar__container {
+                height: 50px;
+                background: gray;
+            }
+
+            .progressBar__bar {
+                height: 50px;
+                width: 0%;
+                background: yellow;
+            }
+
+        </style>
     </head>
     <body>
         <h1>Hello World</h1>
@@ -16,9 +30,9 @@
             <li>[build] npx webpack build --mode production</li>
             <li>[deploy] aws s3 sync ./dist s3://jkanclerz-wpc-3 --acl public-read</li>
             <li>[release] build && deploy</li>
-            <li>set AWS credentials in config [ ]</li>
-            <li>listing files [ ]</li>
-            <li>upload files [ ]</li>
+            <li>set AWS credentials in config [X]</li>
+            <li>listing files [X]</li>
+            <li>upload files [X]</li>
             <li>progress [ ]</li>
             <li>preview [ ]</li>
         </ul>
@@ -27,6 +41,11 @@
         <div class="uploadFiles">
             <input type="file" class="uploadFiles__input" multiple="true"/>
             <button class="uploadFiles__button">Upload files</button>
+            <div class="progressBar">
+                <div class="progressBar__container">
+                    <div class="progressBar__bar"></div>
+                </div>
+            </div>
         </div>
 
         <script type="text/javascript" src="/bundle.js"></script>

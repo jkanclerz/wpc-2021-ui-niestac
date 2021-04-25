@@ -9,7 +9,12 @@ import {
 } from 'amazon-cognito-identity-js';
 
 import AWS from 'aws-sdk';
+import {CognitoIdentityCredentials} from 'aws-sdk';
+
 import S3 from 'aws-sdk/clients/s3';
+import { uuid } from 'uuidv4';
+
+AWS.config.region = awsConfig.Region;
 
 const userPool = new CognitoUserPool({
     UserPoolId: awsConfig.UserPoolId,
@@ -77,6 +82,35 @@ const loginUser = (loginUserRequest) => {
         })
     })
 };
+
+const refreshAWSCredentials = (tokenData) => {
+    AWS.config.credentials = new CognitoIdentityCredentials({
+        IdentityPoolId: awsConfig.IdentityPoolId,
+        Logins: {
+            [awsConfig.credentialsLoginsKey]: tokenData
+                .getIdToken()
+                .getJwtToken(),
+        },
+    });
+}
+
+const loadLocalStorageCredentials = () => {
+    return new Promise((resolve, reject) => {
+        const cognitoUser = userPool.getCurrentUser();
+        if (cognitoUser == null) {
+            reject('user not found');
+        }
+    
+        cognitoUser.getSession((err, session) => {
+            if (err) {
+                reject(err);
+            }
+    
+            resolve(session);
+        });
+    })
+}
+
 const getCurrentUser = () => {
     return new Promise((resolve, reject) => {
         const cognitoUser = userPool.getCurrentUser();
@@ -114,14 +148,44 @@ const listFiles = () => {
             if (err) {
                 reject(err);
             }
+            console.log(data);
             resolve(data['Contents']);
         })
     })
 }
 
-const uploadToS3 = (file) => {
-    console.log(`i going to upload file ${file.name}`);
+const uploadToS3 = (file, userId, onProgresChange) => {
+    return new Promise((resolve, reject) => {
+        const s3 = new S3();
+        const key = `uek-krakow/${userId}/source/${uuid()}/${file.name}`;
+        
+        s3.putObject({
+            Key: key,
+            Bucket: awsConfig.BucketName,
+            Body: file
+        }, (err, data) => {
+            if (err) {
+                reject(err);
+            }
+
+            resolve(key);
+        }).on('httpUploadProgress', (progress) => {
+            const currentProgress = Math.round((progress.loaded / progress.total) * 100)
+            if (onProgresChange) {
+                onProgresChange(currentProgress);
+            }
+        })
+    });
 }
+
+const getPreviewUrl = (key) => {
+    const s3 = new S3();
+    return s3.getSignedUrl('getObject', {
+        Bucket: awsConfig.BucketName,
+        Key: key
+    });
+}
+
 const registerUserRequest = {
     email: 'plmsvhrgdzjsukglhc@miucce.com',
     pw: '1234qwer',
@@ -152,7 +216,7 @@ loginUserBtn.addEventListener('click', () => {
         email: registerUserRequest.email,
         pw: registerUserRequest.pw,
     })
-        .then(user => console.log(user))
+        .then(tokenData => refreshAWSCredentials(tokenData))
         .catch(err => console.log(err));
 });
 
@@ -169,18 +233,41 @@ const uploadFilesBtn = document.querySelector('.uploadFiles .uploadFiles__button
 uploadFilesBtn.addEventListener('click', () => {
     const filesInput = document.querySelector('.uploadFiles .uploadFiles__input');
     const toBeUploaded = [...filesInput.files];
-    
+    const progressBar = document.querySelector('.uploadFiles .progressBar__bar');
     if (toBeUploaded.length == 0) {
         console.log('not enough files selected');
         return;
     }
+    const userId = AWS.config.credentials.identityId;
 
     toBeUploaded.forEach(file => {
-        uploadToS3(file);
+        uploadToS3(
+            file,
+            userId,
+            (currentProgress) => {
+                progressBar.style.width = `${currentProgress}%`;
+                progressBar.textContent = `uploading ... ${currentProgress} %`;
+            }
+        )
+            .then(key => {
+                console.log(`yeah it works, your file key ${key}`);
+                return key;
+            })
+            .then(key => getPreviewUrl(key))
+            .then(url => console.log(url))
+            .catch(err => {
+                console.log(err);
+                console.log('sht is not YESS!!! :>')
+            });
     });
 });
 
 (() => {
+    loadLocalStorageCredentials()
+        .then(tokenData => refreshAWSCredentials(tokenData))
+        .catch(err => console.log("can't refresh credentials exception"))
+    ;
+
     getCurrentUser()
         .then(profile => {
             greet(`${profile.email} nice website ${profile.website}`);

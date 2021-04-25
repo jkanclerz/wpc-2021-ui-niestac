@@ -14,7 +14,8 @@
   "dependencies": {
     "amazon-cognito-identity-js": "^4.6.0",
     "aws-amplify": "^3.3.26",
-    "aws-sdk": "^2.884.0"
+    "aws-sdk": "^2.884.0",
+    "uuidv4": "^6.2.7"
   },
   "devDependencies": {
     "webpack": "^4.0",
