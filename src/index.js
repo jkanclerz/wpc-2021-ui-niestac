@@ -8,6 +8,9 @@ import {
     AuthenticationDetails,
 } from 'amazon-cognito-identity-js';
 
+import AWS from 'aws-sdk';
+import S3 from 'aws-sdk/clients/s3';
+
 const userPool = new CognitoUserPool({
     UserPoolId: awsConfig.UserPoolId,
     ClientId: awsConfig.ClientId,
@@ -102,14 +105,28 @@ const getCurrentUser = () => {
 };
 
 // Storage
+const listFiles = () => {
+    return new Promise((resolve, reject) => {
+        const s3 = new S3();
+        s3.listObjectsV2({
+            Bucket: awsConfig.BucketName
+        }, (err, data) => {
+            if (err) {
+                reject(err);
+            }
+            resolve(data['Contents']);
+        })
+    })
+}
 
-
+const uploadToS3 = (file) => {
+    console.log(`i going to upload file ${file.name}`);
+}
 const registerUserRequest = {
     email: 'plmsvhrgdzjsukglhc@miucce.com',
     pw: '1234qwer',
     website: 'abctestit.pl',
 };
-
 const registerUserBtn = document.querySelector('.registerUser');
 registerUserBtn.addEventListener('click', () => {
     registerUser(registerUserRequest)
@@ -120,7 +137,6 @@ registerUserBtn.addEventListener('click', () => {
         .catch(err => console.log(err))
     ;
 });
-
 const confirmAccountBtn = document.querySelector('.confirmAccount');
 confirmAccountBtn.addEventListener('click', () => {
     confirmAccount({
@@ -130,7 +146,6 @@ confirmAccountBtn.addEventListener('click', () => {
         .then(user => console.log(user))
         .catch(err => console.log(err));
 });
-
 const loginUserBtn = document.querySelector('.loginUser');
 loginUserBtn.addEventListener('click', () => {
     loginUser({
@@ -141,6 +156,29 @@ loginUserBtn.addEventListener('click', () => {
         .catch(err => console.log(err));
 });
 
+const listFilesBtn = document.querySelector('.listFiles');
+listFilesBtn.addEventListener('click', () => {
+    listFiles()
+        .then(files => files.map(file => file.Key))
+        .then(names => console.log(names))
+        .catch(err => console.log(err))
+    ;
+});
+
+const uploadFilesBtn = document.querySelector('.uploadFiles .uploadFiles__button');
+uploadFilesBtn.addEventListener('click', () => {
+    const filesInput = document.querySelector('.uploadFiles .uploadFiles__input');
+    const toBeUploaded = [...filesInput.files];
+    
+    if (toBeUploaded.length == 0) {
+        console.log('not enough files selected');
+        return;
+    }
+
+    toBeUploaded.forEach(file => {
+        uploadToS3(file);
+    });
+});
 
 (() => {
     getCurrentUser()
