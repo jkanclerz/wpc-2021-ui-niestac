@@ -90,7 +90,11 @@ const getCurrentUser = () => {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(attributes);
+                    const profile = attributes.reduce((aggr, item) => {
+                        return {...aggr, [item.Name]: item.Value}
+                    }, {});
+
+                    resolve(profile);
                 }
             });
         });
@@ -101,9 +105,9 @@ const getCurrentUser = () => {
 
 
 const registerUserRequest = {
-    email: 'zmh90824@eoopy.com',
+    email: 'plmsvhrgdzjsukglhc@miucce.com',
     pw: '1234qwer',
-    website: 'jkan.pl',
+    website: 'abctestit.pl',
 };
 
 const registerUserBtn = document.querySelector('.registerUser');
@@ -121,7 +125,7 @@ const confirmAccountBtn = document.querySelector('.confirmAccount');
 confirmAccountBtn.addEventListener('click', () => {
     confirmAccount({
         email: registerUserRequest.email,
-        code: '197292'
+        code: '506075'
     })
         .then(user => console.log(user))
         .catch(err => console.log(err));
@@ -141,8 +145,7 @@ loginUserBtn.addEventListener('click', () => {
 (() => {
     getCurrentUser()
         .then(profile => {
-            console.log(profile);
-            greet('Kuba ;>');
+            greet(`${profile.email} nice website ${profile.website}`);
         })
         .catch(err => greet('Guest ;>'))
     
