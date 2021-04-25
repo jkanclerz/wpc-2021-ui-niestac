@@ -13,62 +13,65 @@ const userPool = new CognitoUserPool({
     ClientId: awsConfig.ClientId,
 })
 
+// Authorization
 const registerUser = (registerUserRequest) => {
-    userPool.signUp(
-        registerUserRequest.email,
-        registerUserRequest.pw,
-        [
-            new CognitoUserAttribute({
-                Name: 'website',
-                Value: registerUserRequest.website,
-            })
-        ],
-        null,
-        (err, result) => {
-            if (err) {
-                console.log(err);
-                return;
+    return new Promise((resolve, reject) => {
+        userPool.signUp(
+            registerUserRequest.email,
+            registerUserRequest.pw,
+            [
+                new CognitoUserAttribute({
+                    Name: 'website',
+                    Value: registerUserRequest.website,
+                })
+            ],
+            null,
+            (err, result) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve(result);
             }
-
-            console.log(result);
-        }
-    );
+        );
+    })
 };
 const confirmAccount = (confirmAccountRequest) => {
-    const user = new CognitoUser({
-        Username: confirmAccountRequest.email,
-        Pool: userPool
-    });
-
-    user.confirmRegistration(
-        confirmAccountRequest.code,
-        true,
-        (err, result) => {
-            if (err) {
-                console.log(err);
-                return;
+    return new Promise((resolve, reject) => {
+        const user = new CognitoUser({
+            Username: confirmAccountRequest.email,
+            Pool: userPool
+        });
+    
+        user.confirmRegistration(
+            confirmAccountRequest.code,
+            true,
+            (err, result) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve(result);
             }
-
-            console.log(result);
-        }
-    )
+        )
+    });
 };
 const loginUser = (loginUserRequest) => {
-    const authDetails = new AuthenticationDetails({
-        Username: loginUserRequest.email,
-        Password: loginUserRequest.pw
-    });
-    const user = new CognitoUser({
-        Username: loginUserRequest.email,
-        Pool: userPool,
-    });
-    user.authenticateUser(authDetails, {
-        onSuccess: (result) => {
-            console.log(result);
-        },
-        onFailure: (err) => {
-            console.log(err);
-        }
+    return new Promise((resolve, reject) => {
+        const authDetails = new AuthenticationDetails({
+            Username: loginUserRequest.email,
+            Password: loginUserRequest.pw
+        });
+        const user = new CognitoUser({
+            Username: loginUserRequest.email,
+            Pool: userPool,
+        });
+        user.authenticateUser(authDetails, {
+            onSuccess: (result) => {
+                resolve(result);
+            },
+            onFailure: (err) => {
+                reject(err);
+            }
+        })
     })
 };
 const getCurrentUser = () => {
@@ -94,6 +97,8 @@ const getCurrentUser = () => {
     })
 };
 
+// Storage
+
 
 const registerUserRequest = {
     email: 'zmh90824@eoopy.com',
@@ -103,7 +108,13 @@ const registerUserRequest = {
 
 const registerUserBtn = document.querySelector('.registerUser');
 registerUserBtn.addEventListener('click', () => {
-    registerUser(registerUserRequest);
+    registerUser(registerUserRequest)
+        .then(user => {
+            return user;
+        })
+        .then(user => console.log(user))
+        .catch(err => console.log(err))
+    ;
 });
 
 const confirmAccountBtn = document.querySelector('.confirmAccount');
@@ -112,6 +123,8 @@ confirmAccountBtn.addEventListener('click', () => {
         email: registerUserRequest.email,
         code: '197292'
     })
+        .then(user => console.log(user))
+        .catch(err => console.log(err));
 });
 
 const loginUserBtn = document.querySelector('.loginUser');
@@ -120,6 +133,8 @@ loginUserBtn.addEventListener('click', () => {
         email: registerUserRequest.email,
         pw: registerUserRequest.pw,
     })
+        .then(user => console.log(user))
+        .catch(err => console.log(err));
 });
 
 
